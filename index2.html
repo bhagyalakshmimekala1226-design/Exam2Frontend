@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager App</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 750px;
+      margin: auto;
+      background: #ffffff;
+      padding: 35px;
+      border-radius: 25px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .title h1 {
+      font-size: 48px;
+      color: #1e3a5f;
+    }
+
+    .title p {
+      margin-top: 10px;
+      font-size: 20px;
+      color: #666;
+    }
+
+    .section {
+      background: #f3f6ff;
+      padding: 25px;
+      border-radius: 20px;
+      margin-bottom: 25px;
+    }
+
+    .section h2 {
+      color: #1e3a5f;
+      margin-bottom: 20px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: none;
+      outline: none;
+      border-radius: 15px;
+      font-size: 16px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    textarea {
+      height: 100px;
+      resize: none;
+    }
+
+    button {
+      padding: 15px;
+      border: none;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .filter-box {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-box input {
+      flex: 1;
+    }
+
+    .task-card {
+      background: #ffffff;
+      padding: 20px;
+      margin-top: 15px;
+      border-radius: 15px;
+      border-left: 6px solid #667eea;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .task-card h3 {
+      color: #1e3a5f;
+      margin-bottom: 10px;
+    }
+
+    .task-card p {
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .delete-btn {
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    }
+
+    .weather-result {
+      margin-top: 20px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e3a5f;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #1e3a5f;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .title h1 {
+        font-size: 35px;
+      }
+
+      .filter-box {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="title">
+      <h1> ⬅️🤷‍♂️➡️Task Manager App</h1>
+      <p>Manage your tasks and check live weather</p>
+    </div>
+
+    <div class="section">
+      <h2> 🤫Add New Task</h2>
+
+      <form id="taskForm">
+        <input type="text" id="taskName" placeholder="Enter Task Name">
+        <textarea id="taskDescription" placeholder="Enter Task Description"></textarea>
+        <button type="submit"> Add Task</button>
+      </form>
+    </div>
+
+    <div class="section">
+      <h2>🧐Search Tasks</h2>
+
+      <div class="filter-box">
+        <input type="text" id="filterInput" placeholder="Search Task">
+        <button onclick="filterTasks()">Filter</button>
+        <button onclick="showTasks(tasks)">Show All</button>
+      </div>
+
+      <div id="taskList"></div>
+    </div>
+
+    <div class="section">
+      <h2>🌦😬😰🥵Weather Feature</h2>
+
+      <input type="text" id="cityInput" placeholder="Enter City Name">
+      <button onclick="getWeather()">Get Weather</button>
+
+      <div class="weather-result" id="weatherResult">
+        Weather details appear here
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    const taskForm = document.getElementById("taskForm");
+    const taskList = document.getElementById("taskList");
+
+    taskForm.onsubmit = function(event) {
+      event.preventDefault();
+
+      const taskName = document.getElementById("taskName").value.trim();
+      const taskDescription = document.getElementById("taskDescription").value.trim();
+
+      if (taskName === "" || taskDescription === "") {
+        alert("Please fill all fields");
+        return;
+      }
+
+      const task = {
+        id: Date.now(),
+        name: taskName,
+        description: taskDescription
+      };
+
+      tasks.push(task);
+      saveTasks();
+      showTasks(tasks);
+      taskForm.reset();
+    };
+
+    function showTasks(taskArray) {
+      taskList.innerHTML = "";
+
+      if (taskArray.length === 0) {
+        taskList.innerHTML = `<h3 class="empty-message">No Tasks Found</h3>`;
+        return;
+      }
+
+      taskArray.map((task) => {
+        taskList.innerHTML += `
+          <div class="task-card">
+            <h3>${task.name}</h3>
+            <p>${task.description}</p>
+            <button class="edit-btn" onclick="editTask(${task.id})">
+              Edit
+            </button>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">
+              🗑 Delete
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    function editTask(taskId) {
+
+  let newTask = prompt("Enter New Task Name");
+  let newDescription = prompt("Enter New Description");
+
+  tasks = tasks.map((task) => {
+    if (task.id == taskId) {
+      task.name = newTask;
+      task.description = newDescription;
+    }
+    return task;
+  });
+
+  saveTasks();
+  showTasks(tasks);
+}
+
+    function deleteTask(taskId) {
+      tasks = tasks.filter((task) => task.id !== taskId);
+      saveTasks();
+      showTasks(tasks);
+    }
+
+    function filterTasks() {
+      const keyword = document.getElementById("filterInput").value.toLowerCase();
+
+      const filteredTasks = tasks.filter((task) => {
+        return task.name.toLowerCase().includes(keyword) ||
+               task.description.toLowerCase().includes(keyword);
+      });
+
+      showTasks(filteredTasks);
+    }
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    async function getWeather() {
+      const city = document.getElementById("cityInput").value.trim();
+      const result = document.getElementById("weatherResult");
+
+      if (city === "") {
+        result.innerHTML = "Please enter city name";
+        return;
+      }
+
+      try {
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
+        const geoResponse = await fetch(geoUrl);
+        const geoData = await geoResponse.json();
+
+        if (!geoData.results) {
+          result.innerHTML = "City not found";
+          return;
+        }
+
+        const latitude = geoData.results[0].latitude;
+        const longitude = geoData.results[0].longitude;
+        const cityName = geoData.results[0].name;
+
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+        const weatherResponse = await fetch(weatherUrl);
+        const weatherData = await weatherResponse.json();
+
+        result.innerHTML = `
+          🌍🌍 City: ${cityName} <br><br>
+          🌡😶‍🌫️🤒 Temperature: ${weatherData.current_weather.temperature} °C
+        `;
+      } catch (error) {
+        result.innerHTML = "Unable to fetch weather data";
+      }
+    }
+
+    showTasks(tasks);
+  </script>
+
+</body>
+</html>
